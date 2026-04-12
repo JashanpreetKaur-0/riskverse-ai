@@ -1,115 +1,85 @@
-# 🚀 RiskVerse AI – Invest Without Fear
+# RiskVerse AI — Invest Without Fear
 
-> AI-powered platform to learn investing without risking real money
-
----
-
-## 📌 Overview
-
-RiskVerse AI is an AI-powered investment simulator designed for Gen-Z users who are afraid to start investing.
-
-It allows users to:
-
-* Practice investing with virtual money 💰
-* Understand risk using simulations 📊
-* Get simple AI-based explanations 🤖
-* Explore IPOs with confidence 🚀
-
-👉 Learn → Experiment → Build Confidence → Invest
+> We don’t simulate markets. We simulate human behavior under risk.
 
 ---
 
-## ✨ Key Features
+## Overview
 
-* 💰 Virtual Investment Simulator (₹10,000)
-* ⚠️ Risk Intelligence Dashboard
-* 📉 Loss Probability Meter
-* 🤖 AI Portfolio Explainer
-* 🧠 Personality-Based Investing
-* 🔮 Future Self Simulator
-* 📊 Smart IPO Advisor
-* 🎮 Gamified Learning System
+RiskVerse AI is a behavioral finance simulator that helps users understand how their **emotions, personality, and decisions** impact their financial future.
 
----
+Unlike traditional investment tools, it focuses on:
 
-## 🛠️ Tech Stack
-
-* Frontend: React.js
-* Backend: Node.js / Express
-* AI: OpenAI API
-* Database: MongoDB
+* Psychology
+* Emotional reactions
+* Future life impact
 
 ---
 
-## ⚙️ How It Works
+## Key Features
 
-1. User gets virtual money
-2. Invests in stocks or IPOs
-3. System simulates outcomes
-4. AI explains risk & decisions
-5. User sees future impact
-
----
-
-## 📂 Project Structure
-
-```
-riskverse-ai/
-│
-├── frontend/        # React UI
-├── backend/         # API & logic
-├── simulation/      # Risk models
-├── ai/              # AI prompts
-├── docs/            # PPT & assets
-```
+* Investor Personality Detection (Daredevil / Guardian / Explorer)
+* Risk & Loss Probability Simulation
+*  Emotional Behavior Insights
+*  Future Self Simulator
+*  Regret Simulation (unique feature)
+*  Wealth Projection Timeline
+*  AI Behavioral Analysis
 
 ---
 
-## 🚀 Getting Started
+##  Demo
 
-```bash
-git clone https://github.com/JashanpreetKaur-0/riskverse-ai.git
-cd riskverse-ai
-```
-
-### Install dependencies
-
-```bash
-cd backend
-npm install
-```
-
-### Run backend
-
-```bash
-npm start
-```
+1. Open `index.html`
+2. Select your investor personality
+3. Choose asset & investment
+4. Run simulation
+5. View your behavioral risk insights
 
 ---
 
-## 🌍 Future Scope
+##  Tech Stack
 
-* 🎤 AI Voice Advisor
-* 📈 Real-time trading integration
-* 🎮 Advanced gamification
-* 📊 More accurate risk models
+* HTML
+* CSS
+* JavaScript
+
+(No frameworks — lightweight prototype)
 
 ---
 
-## 👨‍💻 Team
+##  Problem Solved
 
-* Siya Pahuja (Lead)
+Most beginners fail in investing not because of lack of knowledge, but because of **emotional decisions**.
+
+RiskVerse AI helps users:
+
+* Understand their behavior
+* Predict emotional reactions
+* Make better financial decisions
+
+---
+
+##  Future Scope
+
+* Real-time AI integration (OpenAI)
+* Portfolio tracking
+* Mobile app version
+* Personalized financial coaching
+
+---
+
+##  Team
+
+* Jashanpreet Kaur
 * Lavanya Goyal
-* Jashan
-* Japdeep
+* Siya
+* Japdeep Kaur
 
 ---
 
-## ⭐ Why This Project?
+##  Hackathon Project
 
-Unlike traditional stock apps, RiskVerse AI focuses on:
+Built as a prototype to demonstrate how AI + psychology can transform financial decision-making.
 
-* Learning before investing
-* Reducing fear
-* Simplifying finance using AI
 
