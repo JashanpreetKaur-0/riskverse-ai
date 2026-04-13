@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RiskVerse AI — Investor Behavior Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-400:#7F77DD;
+    --purple-600:#534AB7;--purple-800:#3C3489;--purple-900:#26215C;
+    --amber-50:#FAEEDA;--amber-400:#EF9F27;--amber-700:#633806;
+    --green-50:#EAF3DE;--green-200:#C0DD97;--green-800:#27500A;
+    --red-50:#FCEBEB;--red-200:#F7C1C1;--red-800:#791F1F;
+    --coral-50:#FAECE7;--coral-800:#712B13;
+    --gray-50:#F7F7F5;--gray-100:#EFEFEC;--gray-200:#D3D1C7;
+    --gray-400:#888780;--gray-700:#444441;--gray-900:#1A1A18;
+    --bg:#F4F3EF;--surface:#FFFFFF;
+    --border:rgba(0,0,0,0.10);--border-md:rgba(0,0,0,0.18);
+    --text-1:#1A1A18;--text-2:#5A5A56;--text-3:#8A8A84;
+    --radius-md:10px;--radius-lg:16px;--radius-xl:24px;
+  }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    background:var(--bg); color:var(--text-1);
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; padding:2rem 1rem 4rem;
+  }
+  .nav {
+    width:100%; max-width:820px;
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:1.5rem; flex-wrap:wrap; gap:10px;
+  }
+  .nav-logo { font-size:17px; font-weight:700; letter-spacing:-0.3px; color:var(--text-1); }
+  .nav-logo span { color:var(--purple-600); }
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .nav-badge {
+    font-size:11px; font-weight:600; letter-spacing:0.06em;
+    background:var(--purple-50); color:var(--purple-800);
+    padding:4px 10px; border-radius:100px; border:1px solid var(--purple-100);
+  }
+
+  /* TAB BAR */
+  .tab-bar {
+    width:100%; max-width:820px;
+    display:flex; gap:4px; background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:5px; margin-bottom:1.5rem;
+  }
+  .tab-btn {
+    flex:1; padding:9px 8px; border:none; background:transparent;
+    border-radius:10px; font-size:13px; font-weight:600; color:var(--text-3);
+    cursor:pointer; transition:all 0.18s; font-family:inherit; display:flex;
+    align-items:center; justify-content:center; gap:6px;
+  }
+  .tab-btn:hover { background:var(--gray-50); color:var(--text-2); }
+  .tab-btn.active { background:var(--purple-600); color:#fff; }
+  .tab-icon { font-size:14px; }
+
+  /* GAMIFICATION BAR */
+  .xp-bar-wrap {
+    width:100%; max-width:820px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-lg); padding:12px 16px;
+    display:flex; align-items:center; gap:14px; margin-bottom:1.5rem;
+  }
+  .xp-avatar {
+    width:40px; height:40px; border-radius:50%;
+    background:var(--purple-50); border:2px solid var(--purple-400);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
+  }
+  .xp-info { flex:1; min-width:0; }
+  .xp-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+  .xp-level { font-size:13px; font-weight:700; color:var(--purple-800); }
+  .xp-pts { font-size:12px; color:var(--text-3); }
+  .xp-track { height:6px; background:var(--gray-200); border-radius:3px; }
+  .xp-fill { height:100%; border-radius:3px; background:var(--purple-600); transition:width 0.8s ease; }
+  .xp-badges { display:flex; gap:6px; flex-shrink:0; }
+  .badge-chip {
+    font-size:10px; font-weight:700; padding:4px 10px; border-radius:100px;
+    letter-spacing:0.04em; border:1px solid transparent; cursor:default;
+  }
+  .badge-chip.locked { background:var(--gray-100); color:var(--gray-400); border-color:var(--gray-200); }
+  .badge-chip.earned { background:var(--amber-50); color:var(--amber-700); border-color:#FAC775; }
+  .badge-chip.new { background:var(--purple-50); color:var(--purple-800); border-color:var(--purple-100); animation:badgePop 0.4s ease; }
+  @keyframes badgePop { 0%{transform:scale(0.6);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+  .streak-chip {
+    font-size:12px; font-weight:700; color:#D85A30;
+    background:var(--coral-50); border:1px solid #F5C4B3;
+    padding:5px 12px; border-radius:100px;
+  }
+
+  /* CARD */
+  .card {
+    width:100%; max-width:820px; background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--radius-xl);
+    padding:2rem 2.5rem; box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* STEP BAR */
+  .step-bar { display:flex; align-items:center; gap:8px; margin-bottom:2rem; }
+  .step-dot { width:8px; height:8px; border-radius:50%; background:var(--gray-200); transition:all 0.3s ease; }
+  .step-dot.done { background:var(--purple-400); }
+  .step-dot.active { width:26px; border-radius:4px; background:var(--purple-600); }
+  .step-label { font-size:12px; color:var(--text-3); margin-left:6px; }
+  .rv-screen { display:none; }
+  .rv-screen.active { display:block; }
+  .rv-eyebrow { font-size:11px; font-weight:600; letter-spacing:0.09em; color:var(--purple-600); text-transform:uppercase; margin-bottom:8px; }
+  .rv-title { font-size:26px; font-weight:700; color:var(--text-1); letter-spacing:-0.4px; margin-bottom:8px; line-height:1.25; }
+  .rv-sub { font-size:14px; color:var(--text-2); line-height:1.7; max-width:560px; }
+  .rv-header { margin-bottom:2rem; }
+
+  /* PERSONA */
+  .persona-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:2rem; }
+  .persona-card {
+    background:var(--gray-50); border:2px solid var(--border);
+    border-radius:var(--radius-lg); padding:1.5rem 1.25rem;
+    cursor:pointer; transition:all 0.18s ease; text-align:center;
+  }
+  .persona-card:hover { border-color:var(--purple-400); background:var(--purple-50); transform:translateY(-2px); box-shadow:0 6px 20px rgba(127,119,221,0.15); }
+  .persona-card.selected { border-color:var(--purple-600); background:var(--purple-50); box-shadow:0 0 0 4px rgba(127,119,221,0.15); }
+  .persona-icon { font-size:36px; margin-bottom:10px; display:block; }
+  .persona-name { font-size:14px; font-weight:700; color:var(--text-1); margin-bottom:6px; }
+  .persona-card.selected .persona-name { color:var(--purple-800); }
+  .persona-desc { font-size:12px; color:var(--text-2); line-height:1.55; }
+  .persona-card.selected .persona-desc { color:var(--purple-600); }
+
+  /* ASSET */
+  .asset-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:1.75rem; }
+  .asset-btn {
+    background:var(--gray-50); border:2px solid var(--border);
+    border-radius:var(--radius-md); padding:14px 10px;
+    cursor:pointer; text-align:center; transition:all 0.15s ease;
+  }
+  .asset-btn:hover { border-color:var(--purple-400); background:var(--purple-50); transform:translateY(-1px); }
+  .asset-btn.selected { border-color:var(--purple-600); background:var(--purple-50); box-shadow:0 0 0 3px rgba(127,119,221,0.15); }
+  .a-icon { font-size:24px; display:block; margin-bottom:6px; }
+  .a-name { font-size:13px; font-weight:600; color:var(--text-1); display:block; margin-bottom:3px; }
+  .a-risk { font-size:11px; color:var(--text-3); display:block; }
+  .asset-btn.selected .a-name { color:var(--purple-800); }
+
+  /* INPUTS */
+  .inp-group { margin-bottom:1.5rem; }
+  .inp-label { font-size:13px; color:var(--text-2); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .inp-label strong { font-weight:600; color:var(--text-1); font-size:14px; }
+  input[type="range"] {
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:6px; background:var(--gray-200); border-radius:3px; outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none;
+    width:22px; height:22px; border-radius:50%; background:var(--purple-600);
+    cursor:pointer; border:3px solid #fff; box-shadow:0 1px 6px rgba(83,74,183,0.4); transition:box-shadow 0.15s;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width:22px; height:22px; border-radius:50%; background:var(--purple-600);
+    cursor:pointer; border:3px solid #fff; box-shadow:0 1px 6px rgba(83,74,183,0.4);
+  }
+  .divider { height:1px; background:var(--border); margin:1.75rem 0; }
+  .btn-row { display:flex; gap:12px; align-items:center; margin-top:1.5rem; flex-wrap:wrap; }
+  .rv-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--purple-600); color:#fff; border:none;
+    border-radius:var(--radius-md); padding:13px 26px;
+    font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+    transition:background 0.15s,transform 0.1s; letter-spacing:-0.1px;
+  }
+  .rv-btn:hover { background:var(--purple-800); transform:translateY(-1px); }
+  .rv-btn:active { transform:scale(0.98); }
+  .rv-btn:disabled { background:var(--gray-200); color:var(--text-3); cursor:not-allowed; transform:none; }
+  .rv-btn-ghost {
+    display:inline-flex; align-items:center; gap:6px;
+    background:transparent; color:var(--text-2);
+    border:1.5px solid var(--border-md); border-radius:var(--radius-md);
+    padding:11px 20px; font-size:13px; font-weight:500;
+    cursor:pointer; font-family:inherit; transition:all 0.15s;
+  }
+  .rv-btn-ghost:hover { background:var(--gray-50); border-color:var(--gray-400); color:var(--text-1); }
+  .rv-btn-amber {
+    display:inline-flex; align-items:center; gap:8px;
+    background:#EF9F27; color:#fff; border:none;
+    border-radius:var(--radius-md); padding:13px 22px;
+    font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+    transition:all 0.15s;
+  }
+  .rv-btn-amber:hover { background:#BA7517; transform:translateY(-1px); }
+
+  /* LOADING */
+  #screen-loading { text-align:center; padding:4rem 0; }
+  .loading-ring {
+    width:48px; height:48px; border:3px solid var(--gray-200);
+    border-top:3px solid var(--purple-600); border-radius:50%;
+    animation:spin 0.8s linear infinite; margin:0 auto 1.5rem;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-msg { font-size:15px; color:var(--text-2); min-height:24px; }
+  .loading-dots { display:flex; gap:6px; justify-content:center; margin-top:2rem; }
+  .loading-dot { width:8px; height:8px; border-radius:50%; background:var(--gray-200); animation:pulse 1.2s ease-in-out infinite; }
+  .loading-dot:nth-child(2) { animation-delay:0.2s; }
+  .loading-dot:nth-child(3) { animation-delay:0.4s; }
+  @keyframes pulse { 0%,100%{background:var(--gray-200)} 50%{background:var(--purple-400)} }
+
+  /* RESULT */
+  .result-headline { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:1.5rem; }
+  .result-badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:6px 14px; border-radius:100px; }
+  .badge-high { background:var(--red-50); color:var(--red-800); border:1px solid var(--red-200); }
+  .badge-mid  { background:var(--amber-50); color:var(--amber-700); border:1px solid #FAC775; }
+  .badge-low  { background:var(--green-50); color:var(--green-800); border:1px solid var(--green-200); }
+  .metrics-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:1.75rem; }
+  .metric-card { background:var(--gray-50); border-radius:var(--radius-md); padding:16px; border:1px solid var(--border); }
+  .metric-label { font-size:11px; font-weight:600; letter-spacing:0.07em; color:var(--text-3); text-transform:uppercase; margin-bottom:8px; }
+  .metric-value { font-size:28px; font-weight:700; color:var(--text-1); letter-spacing:-0.5px; line-height:1; }
+  .metric-value.danger  { color:#A32D2D; }
+  .metric-value.success { color:#3B6D11; }
+  .metric-value.warning { color:#854F0B; }
+  .metric-sub { font-size:12px; color:var(--text-3); margin-top:5px; }
+  .risk-meter-section { margin-bottom:1.75rem; }
+  .risk-meter-label { font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:10px; }
+  .risk-meter-track { height:12px; border-radius:6px; background:linear-gradient(to right,#639922,#EF9F27,#E24B4A,#9B1B1B); position:relative; overflow:visible; }
+  .risk-needle {
+    width:4px; height:22px; background:var(--gray-900); border-radius:2px;
+    position:absolute; top:-5px; transform:translateX(-50%);
+    transition:left 1.2s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  }
+  .risk-needle::after {
+    content:''; width:12px; height:12px; border-radius:50%; background:var(--gray-900);
+    position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+  }
+  .risk-labels { display:flex; justify-content:space-between; margin-top:10px; font-size:11px; color:var(--text-3); font-weight:500; }
+  .emotions-section { margin-bottom:1.75rem; }
+  .section-label { font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:10px; }
+  .emotion-tags { display:flex; flex-wrap:wrap; gap:8px; }
+  .etag { padding:6px 14px; border-radius:100px; font-size:12px; font-weight:600; border:1px solid transparent; display:flex; align-items:center; gap:5px; }
+  .etag::before { content:''; width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .etag-fear    { background:var(--coral-50); color:var(--coral-800); border-color:#F5C4B3; }
+  .etag-fear::before { background:#D85A30; }
+  .etag-conf    { background:var(--purple-50); color:var(--purple-900); border-color:var(--purple-100); }
+  .etag-conf::before { background:var(--purple-600); }
+  .etag-risk    { background:var(--amber-50); color:var(--amber-700); border-color:#FAC775; }
+  .etag-risk::before { background:var(--amber-400); }
+  .etag-regret  { background:var(--red-50); color:var(--red-800); border-color:var(--red-200); }
+  .etag-regret::before { background:#E24B4A; }
+  .etag-calm    { background:var(--green-50); color:var(--green-800); border-color:var(--green-200); }
+  .etag-calm::before { background:#639922; }
+  .etag-overconf { background:#FBEAF0; color:#4B1528; border-color:#F4C0D1; }
+  .etag-overconf::before { background:#D4537E; }
+  .insight-box {
+    border-left:4px solid var(--purple-600); background:#FAFAFF;
+    border-radius:0 var(--radius-md) var(--radius-md) 0;
+    padding:14px 18px; margin-bottom:12px;
+    border-top:1px solid var(--border); border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+  }
+  .insight-box.amber { border-left-color:var(--amber-400); background:#FFFDF5; }
+  .ib-label { font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--purple-600); text-transform:uppercase; margin-bottom:7px; }
+  .insight-box.amber .ib-label { color:#854F0B; }
+  .ib-text { font-size:13px; color:var(--text-2); line-height:1.7; }
+  .timeline-section { margin:1.75rem 0; }
+  .timeline { display:flex; gap:0; }
+  .tl-item { flex:1; text-align:center; position:relative; }
+  .tl-item:not(:last-child)::after { content:''; position:absolute; top:12px; left:calc(50% + 11px); width:calc(100% - 22px); height:2px; background:var(--gray-200); }
+  .tl-dot { width:26px; height:26px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; position:relative; z-index:1; border:2px solid transparent; }
+  .tl-dot.pos { background:var(--green-50); color:var(--green-800); border-color:var(--green-200); }
+  .tl-dot.mid { background:var(--amber-50); color:var(--amber-700); border-color:#FAC775; }
+  .tl-dot.neg { background:var(--red-50); color:var(--red-800); border-color:var(--red-200); }
+  .tl-year { font-size:11px; color:var(--text-3); margin-bottom:3px; }
+  .tl-val  { font-size:14px; font-weight:700; color:var(--text-1); }
+  .tl-delta { font-size:11px; margin-top:2px; }
+  .tl-delta.up   { color:#3B6D11; }
+  .tl-delta.down { color:#A32D2D; }
+  .future-box {
+    background:var(--purple-50); border:1.5px solid var(--purple-100);
+    border-radius:var(--radius-lg); padding:1.5rem; margin:1.75rem 0;
+    position:relative; overflow:hidden;
+  }
+  .future-box::before {
+    content:'"'; position:absolute; top:-10px; left:14px;
+    font-size:80px; color:var(--purple-100); font-family:Georgia,serif;
+    line-height:1; pointer-events:none;
+  }
+  .fb-head { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:0.09em; color:var(--purple-600); text-transform:uppercase; margin-bottom:12px; }
+  .fb-pulse { width:8px; height:8px; border-radius:50%; background:var(--purple-600); animation:blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .fb-text { font-size:14px; color:var(--purple-900); line-height:1.75; font-style:italic; position:relative; z-index:1; }
+  .fb-persona { margin-top:12px; font-size:12px; font-weight:600; color:var(--purple-600); }
+  .ai-box { background:var(--surface); border:1.5px solid var(--border-md); border-radius:var(--radius-lg); padding:1.25rem 1.5rem; margin-bottom:1.75rem; }
+  .ai-head { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--text-3); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:10px; }
+  .ai-dot { width:6px; height:6px; background:var(--purple-400); border-radius:50%; }
+  .ai-text { font-size:13px; color:var(--text-2); line-height:1.75; }
+  .score-wrap { display:flex; align-items:center; gap:12px; background:var(--gray-50); border:1px solid var(--border); border-radius:var(--radius-md); padding:10px 16px; margin-left:auto; }
+  .score-label { font-size:12px; color:var(--text-3); }
+  .score-val { font-size:18px; font-weight:700; color:var(--text-1); }
+  .score-bar-wrap { width:80px; height:6px; background:var(--gray-200); border-radius:3px; }
+  .score-bar { height:100%; border-radius:3px; background:var(--purple-600); transition:width 1s ease; }
+
+  /* BEHAVIOR ENGINE */
+  .behavior-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:1.75rem; }
+  .beh-card { background:var(--gray-50); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; }
+  .beh-label { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-3); margin-bottom:12px; }
+  .beh-meter-track { height:8px; border-radius:4px; background:var(--gray-200); margin-bottom:6px; }
+  .beh-meter-fill { height:100%; border-radius:4px; transition:width 1s ease; }
+  .fill-fear   { background:linear-gradient(to right,#EF9F27,#E24B4A); }
+  .fill-greed  { background:linear-gradient(to right,#639922,#EF9F27); }
+  .fill-panic  { background:#E24B4A; }
+  .fill-overconf { background:linear-gradient(to right,#534AB7,#D4537E); }
+  .beh-val { font-size:22px; font-weight:700; color:var(--text-1); margin-bottom:4px; }
+  .beh-desc { font-size:12px; color:var(--text-2); line-height:1.5; }
+  .fear-index-box {
+    background:linear-gradient(135deg,var(--coral-50),var(--amber-50));
+    border:1.5px solid #F5C4B3; border-radius:var(--radius-lg);
+    padding:1.25rem 1.5rem; margin-bottom:1.75rem;
+  }
+  .fi-head { font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--coral-800); margin-bottom:8px; }
+  .fi-val { font-size:32px; font-weight:700; color:var(--coral-800); }
+  .fi-label { font-size:13px; color:#854F0B; margin-top:4px; }
+  .fi-desc { font-size:13px; color:var(--text-2); margin-top:8px; line-height:1.6; }
+
+  /* NEWS IMPACT */
+  .news-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1.75rem; }
+  .news-card {
+    background:var(--gray-50); border:2px solid var(--border);
+    border-radius:var(--radius-lg); padding:1.25rem;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .news-card:hover { border-color:var(--purple-400); transform:translateY(-1px); }
+  .news-card.selected { border-color:var(--purple-600); background:var(--purple-50); }
+  .news-tag { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:3px 9px; border-radius:100px; margin-bottom:8px; display:inline-block; }
+  .tag-crash { background:var(--red-50); color:var(--red-800); border:1px solid var(--red-200); }
+  .tag-boom  { background:var(--green-50); color:var(--green-800); border:1px solid var(--green-200); }
+  .tag-ipo   { background:var(--amber-50); color:var(--amber-700); border:1px solid #FAC775; }
+  .tag-regu  { background:var(--purple-50); color:var(--purple-800); border:1px solid var(--purple-100); }
+  .news-title { font-size:14px; font-weight:700; color:var(--text-1); margin-bottom:6px; line-height:1.35; }
+  .news-desc  { font-size:12px; color:var(--text-2); line-height:1.55; }
+  .news-impact-result { background:var(--surface); border:1.5px solid var(--border-md); border-radius:var(--radius-lg); padding:1.5rem; margin-bottom:1.75rem; display:none; }
+  .news-impact-result.visible { display:block; }
+  .nir-title { font-size:15px; font-weight:700; color:var(--text-1); margin-bottom:1rem; }
+  .nir-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+  .nir-row:last-child { border-bottom:none; }
+  .nir-label { font-size:13px; color:var(--text-2); }
+  .nir-val { font-size:14px; font-weight:700; }
+  .nir-val.neg { color:#A32D2D; }
+  .nir-val.pos { color:#3B6D11; }
+  .nir-val.neu { color:var(--text-1); }
+
+  /* IPO ADVISOR */
+  .ipo-list { display:flex; flex-direction:column; gap:14px; margin-bottom:1.75rem; }
+  .ipo-card {
+    background:var(--surface); border:1.5px solid var(--border-md);
+    border-radius:var(--radius-lg); padding:1.25rem 1.5rem;
+    display:flex; align-items:flex-start; gap:16px;
+  }
+  .ipo-logo {
+    width:48px; height:48px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; flex-shrink:0;
+  }
+  .ipo-info { flex:1; min-width:0; }
+  .ipo-top { display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap; }
+  .ipo-name { font-size:15px; font-weight:700; color:var(--text-1); }
+  .ipo-sector { font-size:11px; padding:3px 9px; border-radius:100px; }
+  .ipo-dates { font-size:12px; color:var(--text-3); margin-bottom:8px; }
+  .ipo-meta { display:flex; gap:16px; margin-bottom:10px; flex-wrap:wrap; }
+  .ipo-meta-item { }
+  .ipo-meta-label { font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-3); margin-bottom:2px; }
+  .ipo-meta-val { font-size:14px; font-weight:700; color:var(--text-1); }
+  .ipo-risk-bar { height:5px; border-radius:3px; background:var(--gray-200); margin-bottom:3px; }
+  .ipo-risk-fill { height:100%; border-radius:3px; }
+  .ipo-analysis { font-size:12px; color:var(--text-2); line-height:1.6; margin-bottom:10px; }
+  .ipo-cta { display:flex; gap:8px; align-items:center; }
+  .ipo-verdict {
+    font-size:12px; font-weight:700; padding:6px 14px; border-radius:100px;
+  }
+  .verdict-yes { background:var(--green-50); color:var(--green-800); border:1px solid var(--green-200); }
+  .verdict-maybe { background:var(--amber-50); color:var(--amber-700); border:1px solid #FAC775; }
+  .verdict-caution { background:var(--red-50); color:var(--red-800); border:1px solid var(--red-200); }
+  .ipo-sim-btn {
+    font-size:12px; font-weight:600; padding:6px 14px; border-radius:100px;
+    background:var(--purple-50); color:var(--purple-800); border:1px solid var(--purple-100);
+    cursor:pointer; transition:all 0.15s; font-family:inherit;
+  }
+  .ipo-sim-btn:hover { background:var(--purple-100); }
+  .ipo-sim-result {
+    margin-top:12px; padding:12px; background:var(--gray-50);
+    border-radius:var(--radius-md); display:none;
+    font-size:13px; color:var(--text-2); line-height:1.6;
+  }
+  .ipo-sim-result.visible { display:block; }
+
+  /* CHALLENGES */
+  .challenge-list { display:flex; flex-direction:column; gap:10px; margin-bottom:1.75rem; }
+  .challenge-row {
+    background:var(--gray-50); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:14px 16px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .ch-icon { font-size:22px; width:36px; text-align:center; flex-shrink:0; }
+  .ch-info { flex:1; min-width:0; }
+  .ch-title { font-size:14px; font-weight:600; color:var(--text-1); margin-bottom:2px; }
+  .ch-desc  { font-size:12px; color:var(--text-3); }
+  .ch-xp { font-size:11px; font-weight:700; color:var(--purple-600); background:var(--purple-50); padding:4px 10px; border-radius:100px; border:1px solid var(--purple-100); flex-shrink:0; }
+  .ch-done { font-size:11px; font-weight:700; color:var(--green-800); background:var(--green-50); padding:4px 10px; border-radius:100px; border:1px solid var(--green-200); flex-shrink:0; }
+  .level-map { display:flex; align-items:center; gap:0; margin-bottom:1.75rem; overflow-x:auto; padding-bottom:4px; }
+  .lv-step { text-align:center; flex-shrink:0; position:relative; padding:0 8px; }
+  .lv-step:not(:last-child)::after { content:''; position:absolute; top:18px; left:calc(50% + 20px); width:calc(100% - 40px); height:2px; background:var(--gray-200); z-index:0; }
+  .lv-circle {
+    width:40px; height:40px; border-radius:50%; margin:0 auto 6px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; position:relative; z-index:1;
+  }
+  .lv-circle.done { background:var(--purple-600); color:#fff; }
+  .lv-circle.current { background:var(--purple-50); color:var(--purple-800); border:3px solid var(--purple-600); }
+  .lv-circle.locked { background:var(--gray-100); color:var(--gray-400); border:2px solid var(--gray-200); }
+  .lv-name { font-size:10px; color:var(--text-3); }
+
+  @media (max-width:600px) {
+    body { padding:1rem 0.75rem 3rem; }
+    .card { padding:1.5rem; border-radius:var(--radius-lg); }
+    .persona-grid { grid-template-columns:1fr; }
+    .asset-grid { grid-template-columns:repeat(2,1fr); }
+    .metrics-row { grid-template-columns:1fr 1fr; }
+    .behavior-grid { grid-template-columns:1fr; }
+    .news-grid { grid-template-columns:1fr; }
+    .rv-title { font-size:22px; }
+    .tab-btn { font-size:11px; padding:8px 4px; }
+    .tab-icon { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">Risk<span>Verse</span> AI</div>
+  <div class="nav-right">
+    <div class="streak-chip" id="streakChip">🔥 1 day streak</div>
+    <div class="nav-badge">HACKATHON BUILD</div>
+  </div>
+</nav>
+
+<!-- XP / GAMIFICATION BAR -->
+<div class="xp-bar-wrap">
+  <div class="xp-avatar" id="xpAvatar">🌱</div>
+  <div class="xp-info">
+    <div class="xp-top">
+      <div class="xp-level" id="xpLevel">Level 1 — Beginner Investor</div>
+      <div class="xp-pts" id="xpPts">0 / 200 XP</div>
+    </div>
+    <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+  </div>
+  <div class="xp-badges" id="badgeRow">
+    <div class="badge-chip locked" id="badge1">🎯 First Sim</div>
+    <div class="badge-chip locked" id="badge2">📰 News Pro</div>
+    <div class="badge-chip locked" id="badge3">🚀 IPO Scout</div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('simulator')" id="tab-simulator">
+    <span class="tab-icon">🎮</span> Simulator
+  </button>
+  <button class="tab-btn" onclick="switchTab('behavior')" id="tab-behavior">
+    <span class="tab-icon">🧠</span> Behavior Engine
+  </button>
+  <button class="tab-btn" onclick="switchTab('news')" id="tab-news">
+    <span class="tab-icon">📰</span> News Impact
+  </button>
+  <button class="tab-btn" onclick="switchTab('ipo')" id="tab-ipo">
+    <span class="tab-icon">🚀</span> IPO Advisor
+  </button>
+  <button class="tab-btn" onclick="switchTab('learn')" id="tab-learn">
+    <span class="tab-icon">🏆</span> Challenges
+  </button>
+</div>
+
+<div class="card">
+
+  <!-- ===================== TAB: SIMULATOR ===================== -->
+  <div class="tab-content active" id="content-simulator">
+    <div class="step-bar" id="stepBar">
+      <div class="step-dot active" id="s1"></div>
+      <div class="step-dot" id="s2"></div>
+      <div class="step-dot" id="s3"></div>
+      <div class="step-dot" id="s4"></div>
+      <span class="step-label" id="stepLabel">Personality</span>
+    </div>
+
+    <!-- SCREEN 1: PERSONA -->
+    <div class="rv-screen active" id="screen-persona">
+      <div class="rv-header">
+        <div class="rv-eyebrow">Step 1 of 4 — Investor DNA</div>
+        <div class="rv-title">Who are you as an investor?</div>
+        <div class="rv-sub">Your psychology shapes every financial decision. Pick the profile that feels most honest — not the one you wish you were.</div>
+      </div>
+      <div class="persona-grid" id="personaGrid">
+        <div class="persona-card" data-id="daredevil">
+          <span class="persona-icon">🔥</span>
+          <div class="persona-name">The Daredevil</div>
+          <div class="persona-desc">High risk, high reward. You chase big returns and embrace volatility as pure opportunity.</div>
+        </div>
+        <div class="persona-card" data-id="guardian">
+          <span class="persona-icon">🛡️</span>
+          <div class="persona-name">The Guardian</div>
+          <div class="persona-desc">Safety first. You prioritize protecting what you have over growing it fast.</div>
+        </div>
+        <div class="persona-card" data-id="explorer">
+          <span class="persona-icon">🧭</span>
+          <div class="persona-name">The Explorer</div>
+          <div class="persona-desc">Curious and learning. You experiment but feel uncertain when markets move hard.</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="rv-btn" id="btn-p1" onclick="goToScreen('asset')" disabled>Continue →</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: ASSET + AMOUNT -->
+    <div class="rv-screen" id="screen-asset">
+      <div class="rv-header">
+        <div class="rv-eyebrow">Step 2 of 4 — Asset & Amount</div>
+        <div class="rv-title">What are you investing in?</div>
+        <div class="rv-sub">Choose the asset class and set your investment size. Each carries its own risk signature and emotional weight.</div>
+      </div>
+      <div class="asset-grid" id="assetGrid">
+        <div class="asset-btn" data-id="crypto" data-risk="92"><span class="a-icon">₿</span><span class="a-name">Crypto</span><span class="a-risk">Extreme risk</span></div>
+        <div class="asset-btn" data-id="stocks" data-risk="62"><span class="a-icon">📈</span><span class="a-name">Stocks</span><span class="a-risk">Moderate–high</span></div>
+        <div class="asset-btn" data-id="realestate" data-risk="32"><span class="a-icon">🏠</span><span class="a-name">Real Estate</span><span class="a-risk">Moderate</span></div>
+        <div class="asset-btn" data-id="gold" data-risk="22"><span class="a-icon">🥇</span><span class="a-name">Gold</span><span class="a-risk">Low–moderate</span></div>
+        <div class="asset-btn" data-id="bonds" data-risk="12"><span class="a-icon">📄</span><span class="a-name">Bonds</span><span class="a-risk">Low risk</span></div>
+        <div class="asset-btn" data-id="startups" data-risk="97"><span class="a-icon">🚀</span><span class="a-name">Startups</span><span class="a-risk">Extreme risk</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="inp-group">
+        <div class="inp-label"><span>Investment amount</span><strong id="amtDisplay">₹50,000</strong></div>
+        <input type="range" min="5000" max="500000" step="5000" value="50000" id="amtSlider" oninput="updateAmt(this.value)">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:6px;"><span>₹5K</span><span>₹1L</span><span>₹2L</span><span>₹3L</span><span>₹5L</span></div>
+      </div>
+      <div class="inp-group">
+        <div class="inp-label"><span>Time horizon</span><strong id="horizDisplay">3 years</strong></div>
+        <input type="range" min="1" max="20" step="1" value="3" id="horizSlider" oninput="updateHoriz(this.value)">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:6px;"><span>1y</span><span>5y</span><span>10y</span><span>15y</span><span>20y</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="rv-btn-ghost" onclick="goToScreen('persona')">← Back</button>
+        <button class="rv-btn" id="btn-a2" onclick="goToScreen('loading')" disabled>Run Simulation →</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: LOADING -->
+    <div class="rv-screen" id="screen-loading">
+      <div class="loading-ring"></div>
+      <div class="loading-msg" id="loadingText">Analyzing your investor psychology...</div>
+      <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+    </div>
+
+    <!-- SCREEN 4: RESULT -->
+    <div class="rv-screen" id="screen-result">
+      <div class="result-headline">
+        <div>
+          <div class="rv-eyebrow">Simulation complete</div>
+          <div class="rv-title" id="resultTitle">Your RiskVerse Report</div>
+          <div class="rv-sub" id="resultSub" style="margin-top:6px;"></div>
+        </div>
+        <div class="result-badge" id="riskBadge"></div>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-card"><div class="metric-label">Loss probability</div><div class="metric-value" id="r-loss">—</div><div class="metric-sub" id="r-loss-sub"></div></div>
+        <div class="metric-card"><div class="metric-label">Expected return</div><div class="metric-value" id="r-return">—</div><div class="metric-sub" id="r-return-sub"></div></div>
+        <div class="metric-card"><div class="metric-label">Behavior score</div><div class="metric-value" id="r-bscore">—</div><div class="metric-sub">out of 100</div></div>
+      </div>
+      <div class="risk-meter-section">
+        <div class="risk-meter-label">Risk level</div>
+        <div class="risk-meter-track"><div class="risk-needle" id="riskNeedle" style="left:5%"></div></div>
+        <div class="risk-labels"><span>Low</span><span>Moderate</span><span>High</span><span>Extreme</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="emotions-section">
+        <div class="section-label">Emotional profile</div>
+        <div class="emotion-tags" id="emotionTags"></div>
+      </div>
+      <div class="insight-box">
+        <div class="ib-label">Emotional insight</div>
+        <div class="ib-text" id="ib-text-e"></div>
+      </div>
+      <div class="insight-box amber">
+        <div class="ib-label">Future life impact</div>
+        <div class="ib-text" id="ib-text-l"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="timeline-section">
+        <div class="section-label">Projected wealth trajectory</div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+      <div class="future-box">
+        <div class="fb-head"><div class="fb-pulse"></div>Future self message</div>
+        <div class="fb-text" id="futureMsg"></div>
+        <div class="fb-persona" id="futurePersona"></div>
+      </div>
+      <div class="ai-box">
+        <div class="ai-head"><div class="ai-dot"></div>AI behavioral analysis</div>
+        <div class="ai-text" id="aiText"></div>
+      </div>
+      <!-- XP UNLOCK NOTIFICATION -->
+      <div id="xpUnlockBox" style="display:none; background:var(--purple-50); border:1.5px solid var(--purple-100); border-radius:var(--radius-lg); padding:1rem 1.5rem; margin-bottom:1.5rem; display:none;">
+        <div style="font-size:13px; font-weight:700; color:var(--purple-800); margin-bottom:4px;" id="xpUnlockMsg">+50 XP earned!</div>
+        <div style="font-size:12px; color:var(--purple-600);" id="xpUnlockSub">Keep simulating to level up</div>
+      </div>
+      <div class="btn-row">
+        <button class="rv-btn" onclick="goToBehavior()">View Behavior Profile →</button>
+        <button class="rv-btn-ghost" onclick="resetAll()">← Start over</button>
+        <div class="score-wrap">
+          <div><div class="score-label">Behavior score</div><div class="score-val" id="bScoreDisplay">—</div></div>
+          <div><div class="score-bar-wrap"><div class="score-bar" id="scoreBar" style="width:0%"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- end simulator -->
+
+  <!-- ===================== TAB: BEHAVIOR ENGINE ===================== -->
+  <div class="tab-content" id="content-behavior">
+    <div class="rv-header">
+      <div class="rv-eyebrow">Behavior Intelligence</div>
+      <div class="rv-title">Your Investor Psychology Profile</div>
+      <div class="rv-sub">We track four core behavioral scores that determine whether you will succeed or self-sabotage in real markets. These update every time you run a simulation.</div>
+    </div>
+    <div id="behNoData" style="background:var(--gray-50); border:1px solid var(--border); border-radius:var(--radius-lg); padding:2rem; text-align:center; margin-bottom:1.75rem;">
+      <div style="font-size:32px; margin-bottom:12px;">🧠</div>
+      <div style="font-size:15px; font-weight:600; color:var(--text-2); margin-bottom:6px;">No behavior data yet</div>
+      <div style="font-size:13px; color:var(--text-3);">Run a simulation first to generate your psychological profile.</div>
+    </div>
+    <div id="behData" style="display:none;">
+      <div class="fear-index-box">
+        <div class="fi-head">Fear Index Score</div>
+        <div class="fi-val" id="fearIndexVal">—</div>
+        <div class="fi-label" id="fearIndexLabel">—</div>
+        <div class="fi-desc" id="fearIndexDesc">—</div>
+      </div>
+      <div class="behavior-grid">
+        <div class="beh-card">
+          <div class="beh-label">Fear Level</div>
+          <div class="beh-val" id="beh-fear">—</div>
+          <div class="beh-meter-track"><div class="beh-meter-fill fill-fear" id="bar-fear" style="width:0%"></div></div>
+          <div class="beh-desc" id="desc-fear">—</div>
+        </div>
+        <div class="beh-card">
+          <div class="beh-label">Greed Level</div>
+          <div class="beh-val" id="beh-greed">—</div>
+          <div class="beh-meter-track"><div class="beh-meter-fill fill-greed" id="bar-greed" style="width:0%"></div></div>
+          <div class="beh-desc" id="desc-greed">—</div>
+        </div>
+        <div class="beh-card">
+          <div class="beh-label">Panic Sell Risk</div>
+          <div class="beh-val" id="beh-panic">—</div>
+          <div class="beh-meter-track"><div class="beh-meter-fill fill-panic" id="bar-panic" style="width:0%"></div></div>
+          <div class="beh-desc" id="desc-panic">—</div>
+        </div>
+        <div class="beh-card">
+          <div class="beh-label">Overconfidence</div>
+          <div class="beh-val" id="beh-overconf">—</div>
+          <div class="beh-meter-track"><div class="beh-meter-fill fill-overconf" id="bar-overconf" style="width:0%"></div></div>
+          <div class="beh-desc" id="desc-overconf">—</div>
+        </div>
+      </div>
+      <div class="insight-box">
+        <div class="ib-label">Behavior Pattern Detected</div>
+        <div class="ib-text" id="behPatternText">—</div>
+      </div>
+      <div class="insight-box amber">
+        <div class="ib-label">What This Costs You Annually</div>
+        <div class="ib-text" id="behCostText">—</div>
+      </div>
+    </div>
+  </div><!-- end behavior -->
+
+  <!-- ===================== TAB: NEWS IMPACT ===================== -->
+  <div class="tab-content" id="content-news">
+    <div class="rv-header">
+      <div class="rv-eyebrow">Real-World Events</div>
+      <div class="rv-title">How would your portfolio survive this?</div>
+      <div class="rv-sub">Select a real-world market event and see how your last simulated portfolio would have performed. This is where you discover if your strategy is stress-tested.</div>
+    </div>
+    <div id="newsNoData" style="background:var(--gray-50); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.5rem; text-align:center; margin-bottom:1.75rem;">
+      <div style="font-size:13px; color:var(--text-3);">Run a simulation first, then come back to stress-test against real events.</div>
+    </div>
+    <div id="newsData" style="display:none;">
+      <div class="news-grid" id="newsGrid">
+        <div class="news-card" data-id="crash2020" onclick="selectNews(this)">
+          <div class="news-tag tag-crash">Market Crash</div>
+          <div class="news-title">COVID-19 Market Crash (2020)</div>
+          <div class="news-desc">Global markets dropped 35% in 5 weeks. Panic selling hit record highs. How would you have reacted?</div>
+        </div>
+        <div class="news-card" data-id="cryptoboom" onclick="selectNews(this)">
+          <div class="news-tag tag-boom">Crypto Boom</div>
+          <div class="news-title">Bitcoin 10x Bull Run (2020–21)</div>
+          <div class="news-desc">BTC went from ₹5L to ₹50L. FOMO drove millions of new investors in at the peak. Would you have held or sold?</div>
+        </div>
+        <div class="news-card" data-id="ratehike" onclick="selectNews(this)">
+          <div class="news-tag tag-regu">RBI Rate Hike</div>
+          <div class="news-title">RBI Emergency Rate Hike (2023)</div>
+          <div class="news-desc">Sudden rate hike crushed bond prices and slowed real estate. Safe investors got surprised too.</div>
+        </div>
+        <div class="news-card" data-id="ipohype" onclick="selectNews(this)">
+          <div class="news-tag tag-ipo">IPO Hype</div>
+          <div class="news-title">Paytm-like IPO Crash Scenario</div>
+          <div class="news-desc">Overhyped IPO. Listed 27% below issue price on day 1. Did you buy the hype or analyze the fundamentals?</div>
+        </div>
+      </div>
+      <div class="news-impact-result" id="newsImpactResult">
+        <div class="nir-title" id="nirTitle">Impact Analysis</div>
+        <div id="nirRows"></div>
+      </div>
+      <div id="newsPersonaInsight" style="display:none;" class="insight-box" style="margin-top:1rem;">
+        <div class="ib-label">How your personality would react</div>
+        <div class="ib-text" id="newsPersonaText">—</div>
+      </div>
+    </div>
+  </div><!-- end news -->
+
+  <!-- ===================== TAB: IPO ADVISOR ===================== -->
+  <div class="tab-content" id="content-ipo">
+    <div class="rv-header">
+      <div class="rv-eyebrow">Smart IPO Advisor</div>
+      <div class="rv-title">Upcoming IPOs — Analyzed for You</div>
+      <div class="rv-sub">AI-powered risk ratings for each IPO, matched to your investor personality. Don't invest based on hype — invest based on analysis.</div>
+    </div>
+    <div class="ipo-list" id="ipoList">
+
+      <div class="ipo-card">
+        <div class="ipo-logo" style="background:var(--purple-50);">⚡</div>
+        <div class="ipo-info">
+          <div class="ipo-top">
+            <div class="ipo-name">VoltGrid Energy Ltd</div>
+            <div class="ipo-sector" style="background:var(--green-50);color:var(--green-800);border:1px solid var(--green-200);">Clean Energy</div>
+          </div>
+          <div class="ipo-dates">Open: Jun 12–14, 2025 &nbsp;·&nbsp; Price Band: ₹420–₹440</div>
+          <div class="ipo-meta">
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Issue Size</div><div class="ipo-meta-val">₹1,200 Cr</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">GMP (Grey Mkt)</div><div class="ipo-meta-val" style="color:#3B6D11;">+₹62</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Risk Level</div><div class="ipo-meta-val" style="color:#854F0B;">Medium</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Subscription</div><div class="ipo-meta-val">42x</div></div>
+          </div>
+          <div class="ipo-risk-bar"><div class="ipo-risk-fill" style="width:55%;background:#EF9F27;"></div></div>
+          <div class="ipo-analysis">Solid fundamentals in a government-backed sector. Revenue grew 38% YoY but P/E is stretched at 48x. Risk: sector regulatory changes. Suitable for balanced investors with 2+ year horizon. Not ideal if you need liquidity soon.</div>
+          <div class="ipo-cta">
+            <div class="ipo-verdict verdict-maybe">◆ Invest Carefully</div>
+            <button class="ipo-sim-btn" onclick="toggleIPOSim(this, 'volt')">Simulate outcome ▾</button>
+          </div>
+          <div class="ipo-sim-result" id="sim-volt">
+            <strong>Simulation for VoltGrid:</strong> Based on your investor profile, there's a 62% chance of listing gains (avg +18%). However, if you are a Daredevil profile, you are likely to hold too long and give back gains. Guardian profiles should only apply if they can lock in for 18+ months. Explorer profiles: set a strict 10% stop-loss on listing day.
+          </div>
+        </div>
+      </div>
+
+      <div class="ipo-card">
+        <div class="ipo-logo" style="background:var(--amber-50);">🛒</div>
+        <div class="ipo-info">
+          <div class="ipo-top">
+            <div class="ipo-name">QuickMart Commerce</div>
+            <div class="ipo-sector" style="background:var(--amber-50);color:var(--amber-700);border:1px solid #FAC775;">Quick Commerce</div>
+          </div>
+          <div class="ipo-dates">Open: Jun 20–22, 2025 &nbsp;·&nbsp; Price Band: ₹720–₹760</div>
+          <div class="ipo-meta">
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Issue Size</div><div class="ipo-meta-val">₹4,800 Cr</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">GMP (Grey Mkt)</div><div class="ipo-meta-val" style="color:#3B6D11;">+₹110</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Risk Level</div><div class="ipo-meta-val" style="color:#E24B4A;">High</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Subscription</div><div class="ipo-meta-val">180x</div></div>
+          </div>
+          <div class="ipo-risk-bar"><div class="ipo-risk-fill" style="width:78%;background:#E24B4A;"></div></div>
+          <div class="ipo-analysis">GMP looks exciting but it's primarily hype-driven. Company is still loss-making. 180x subscription increases allotment scarcity but also signals frothy sentiment. Paytm-like scenario is possible. Do NOT invest expecting listing pop alone — fundamentals don't support it yet.</div>
+          <div class="ipo-cta">
+            <div class="ipo-verdict verdict-caution">⚠ High Caution</div>
+            <button class="ipo-sim-btn" onclick="toggleIPOSim(this, 'quick')">Simulate outcome ▾</button>
+          </div>
+          <div class="ipo-sim-result" id="sim-quick">
+            <strong>Simulation for QuickMart:</strong> 45% chance of listing gains, but 38% chance of listing 15–25% below issue price. High subscription means allotment is unlikely — you may be tempted to buy on the secondary market on listing day, which is where most retail investors lose. Daredevil profiles: very high emotional risk. Guardian profiles: avoid entirely. Explorer profiles: observe, don't invest.
+          </div>
+        </div>
+      </div>
+
+      <div class="ipo-card">
+        <div class="ipo-logo" style="background:var(--purple-50);">🏥</div>
+        <div class="ipo-info">
+          <div class="ipo-top">
+            <div class="ipo-name">MedCore Diagnostics</div>
+            <div class="ipo-sector" style="background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-100);">Healthcare</div>
+          </div>
+          <div class="ipo-dates">Open: Jul 3–5, 2025 &nbsp;·&nbsp; Price Band: ₹290–₹310</div>
+          <div class="ipo-meta">
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Issue Size</div><div class="ipo-meta-val">₹680 Cr</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">GMP (Grey Mkt)</div><div class="ipo-meta-val" style="color:#3B6D11;">+₹28</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Risk Level</div><div class="ipo-meta-val" style="color:#3B6D11;">Low</div></div>
+            <div class="ipo-meta-item"><div class="ipo-meta-label">Subscription</div><div class="ipo-meta-val">18x</div></div>
+          </div>
+          <div class="ipo-risk-bar"><div class="ipo-risk-fill" style="width:28%;background:#639922;"></div></div>
+          <div class="ipo-analysis">Profitable company, reasonable valuation at 22x P/E. Steady recurring revenue from diagnostic contracts. Low GMP means less hype risk. This is a quality business IPO, not a momentum trade. Ideal for Guardian and Explorer profiles building long-term portfolios.</div>
+          <div class="ipo-cta">
+            <div class="ipo-verdict verdict-yes">✓ Strong Consider</div>
+            <button class="ipo-sim-btn" onclick="toggleIPOSim(this, 'med')">Simulate outcome ▾</button>
+          </div>
+          <div class="ipo-sim-result" id="sim-med">
+            <strong>Simulation for MedCore:</strong> 74% probability of 8–22% listing gains. Even if listing is flat, fundamentals support 3-year upside. Guardian profiles: this is exactly the right kind of IPO for you. Explorer profiles: great learning opportunity — low-risk with real fundamentals to study. Daredevil profiles: returns may feel too slow for your style.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end ipo -->
+
+  <!-- ===================== TAB: CHALLENGES ===================== -->
+  <div class="tab-content" id="content-learn">
+    <div class="rv-header">
+      <div class="rv-eyebrow">Gamified Learning</div>
+      <div class="rv-title">Level Up Your Investor Brain</div>
+      <div class="rv-sub">Complete daily challenges to earn XP, unlock badges, and climb from Beginner to Pro Investor. Each challenge is tied to a real financial concept.</div>
+    </div>
+
+    <!-- LEVEL MAP -->
+    <div class="section-label" style="margin-bottom:12px;">Your Journey</div>
+    <div class="level-map" id="levelMap">
+      <div class="lv-step"><div class="lv-circle done" id="lv1">✓</div><div class="lv-name">Beginner</div></div>
+      <div class="lv-step"><div class="lv-circle locked" id="lv2">2</div><div class="lv-name">Learner</div></div>
+      <div class="lv-step"><div class="lv-circle locked" id="lv3">3</div><div class="lv-name">Analyst</div></div>
+      <div class="lv-step"><div class="lv-circle locked" id="lv4">4</div><div class="lv-name">Strategist</div></div>
+      <div class="lv-step"><div class="lv-circle locked" id="lv5">5</div><div class="lv-name">Pro Investor</div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DAILY CHALLENGES -->
+    <div class="section-label" style="margin-bottom:12px;">Today's Challenges</div>
+    <div class="challenge-list" id="challengeList">
+      <div class="challenge-row" id="ch1">
+        <div class="ch-icon">🎮</div>
+        <div class="ch-info">
+          <div class="ch-title">Run your first simulation</div>
+          <div class="ch-desc">Go to the Simulator tab and run any simulation to understand your risk profile</div>
+        </div>
+        <div class="ch-xp" id="ch1-xp">+50 XP</div>
+      </div>
+      <div class="challenge-row" id="ch2">
+        <div class="ch-icon">📰</div>
+        <div class="ch-info">
+          <div class="ch-title">Stress-test against a market crash</div>
+          <div class="ch-desc">Use the News Impact tab to see how a COVID crash would affect your portfolio</div>
+        </div>
+        <div class="ch-xp" id="ch2-xp">+40 XP</div>
+      </div>
+      <div class="challenge-row" id="ch3">
+        <div class="ch-icon">🚀</div>
+        <div class="ch-info">
+          <div class="ch-title">Analyze an IPO before "investing"</div>
+          <div class="ch-desc">Open the IPO Advisor and simulate the outcome of any upcoming IPO</div>
+        </div>
+        <div class="ch-xp" id="ch3-xp">+60 XP</div>
+      </div>
+      <div class="challenge-row" id="ch4">
+        <div class="ch-icon">🧠</div>
+        <div class="ch-info">
+          <div class="ch-title">Check your behavior engine</div>
+          <div class="ch-desc">Run a simulation and then review your Fear Index and Panic Sell Risk scores</div>
+        </div>
+        <div class="ch-xp" id="ch4-xp">+30 XP</div>
+      </div>
+      <div class="challenge-row" id="ch5">
+        <div class="ch-icon">🔥</div>
+        <div class="ch-info">
+          <div class="ch-title">3-day streak bonus</div>
+          <div class="ch-desc">Visit and run a simulation 3 days in a row to activate the streak multiplier</div>
+        </div>
+        <div class="ch-xp" id="ch5-xp">+100 XP</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- BADGES -->
+    <div class="section-label" style="margin-bottom:12px;">Badge Collection</div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:1.75rem;" id="badgeCollection">
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">🎯 First Simulation</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">📰 News Analyst</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">🚀 IPO Scout</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">🔥 3-Day Streak</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">🧠 Behavior Master</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">⚡ Level 3 Analyst</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">🛡️ Guardian Mode</div>
+      <div class="badge-chip locked" style="font-size:12px;padding:6px 14px;">💎 Pro Investor</div>
+    </div>
+  </div><!-- end challenges -->
+
+</div><!-- end card -->
+
+<script>
+let state = { persona:null, asset:null, assetRisk:0, amount:50000, horizon:3 };
+let gameState = { xp:0, level:1, streak:1, simCount:0, newsChecked:false, ipoChecked:false };
+
+const PERSONAS = {
+  daredevil:{ label:'Daredevil', riskMod:1.3,  returnMod:1.4,  lossAdd:18  },
+  guardian: { label:'Guardian',  riskMod:0.65, returnMod:0.75, lossAdd:-12 },
+  explorer: { label:'Explorer',  riskMod:1.0,  returnMod:1.05, lossAdd:5   }
+};
+const ASSETS = {
+  crypto:     { label:'Crypto',      baseReturn:85,  volatility:92 },
+  stocks:     { label:'Stocks',      baseReturn:38,  volatility:60 },
+  realestate: { label:'Real Estate', baseReturn:22,  volatility:32 },
+  gold:       { label:'Gold',        baseReturn:12,  volatility:22 },
+  bonds:      { label:'Bonds',       baseReturn:7,   volatility:12 },
+  startups:   { label:'Startups',    baseReturn:130, volatility:97 }
+};
+const EMOTIONS = {
+  daredevil:{ high:['Fear','Overconfidence','Risk'],  low:['Confidence','Risk']   },
+  guardian: { high:['Regret','Fear','Calm'],          low:['Calm','Confidence']   },
+  explorer: { high:['Fear','Regret','Risk'],          low:['Confidence','Risk']   }
+};
+const TAG_CLASS = {
+  Fear:'etag-fear', Overconfidence:'etag-overconf', Risk:'etag-risk',
+  Regret:'etag-regret', Calm:'etag-calm', Confidence:'etag-conf'
+};
+const EMOTION_INSIGHTS = {
+  daredevil:{
+    high:"You are wired to bet big — but overconfidence could cause you to double down even as losses mount. When the market tanks 40%, you may feel invincible and hold, then panic-sell at the absolute bottom. This is a well-documented pattern called the 'disposition effect.'",
+    low: "You have the nerves for this. Your boldness is a genuine edge even in lower-risk assets. The primary warning is boredom: you may underestimate how quietly a stable investment compounds, exit early seeking excitement, and destroy compounding that was working silently."
+  },
+  guardian:{
+    high:"Your instinct is to escape pain, not chase gain. In a high-volatility asset, you will almost certainly sell too early on any significant dip, locking in losses and missing the recovery. Research shows loss-averse investors exit 60% of positions before the market actually rebounds.",
+    low: "This feels like home territory for you. Your cautious nature aligns well here. You may leave some upside on the table, but you will sleep at night — which has real psychological and physical value that most financial models completely ignore."
+  },
+  explorer:{
+    high:"You will question every market move and second-guess yourself constantly. This creates regret cycles: sell on dip, watch prices recover, re-enter late at a high, panic again on the next drop. Beginner investors in volatile assets lose an average of 12% annually just from ill-timed behavioral decisions.",
+    low: "You are in a productive learning zone. The stakes are manageable and the experience will shape your future decisions meaningfully. Stay curious, stay humble, and resist the urge to extrapolate short-term patterns into lifetime conviction."
+  }
+};
+const LIFE_IMPACTS = {
+  daredevil:{
+    high:"If this investment goes wrong, it could delay a major life goal — a home purchase, education, or early retirement — by 4 to 8 years. Your lifestyle is tied to this outcome more than you currently realize.",
+    low: "Even at lower risk, your pattern of seeking more means you may reinvest gains into riskier plays next cycle. Building discipline in low-risk environments is your most important financial skill to develop right now."
+  },
+  guardian:{
+    high:"A significant loss here could cause you to exit investing entirely for several years. That absence from the market typically costs more than the original loss — opportunity cost compounds quietly in the background.",
+    low: "Your savings are safe but likely underperforming inflation over the long run. The real risk for a Guardian is staying too conservative too long, watching purchasing power erode slowly and invisibly."
+  },
+  explorer:{
+    high:"You are building your investor identity right now. A hard loss at this stage can create lasting risk-aversion that holds back your financial growth for a decade. Remember: a good decision can still lose money — and that is okay.",
+    low: "This is a healthy first chapter. The habits you build here will make your larger future investments significantly smarter. The gap between a financially educated 30-year-old and an uneducated one often starts with exactly this kind of early investment."
+  }
+};
+const FUTURE_MSGS = {
+  daredevil:{
+    high:"Five years from now, you are either telling this story with pride at a dinner table — or quietly rebuilding from a painful loss. The version of you that wins will not be the one who got lucky. It will be the one who had a real plan beyond the thrill of the bet.",
+    low: "You chose a quieter road than usual. The discipline you are showing right now is the exact habit that genuinely wealthy people build before the big bets — not after."
+  },
+  guardian:{
+    high:"Your future self is watching this decision carefully. If this does not go well, they will carry that scar into every financial decision for years. Ask yourself honestly: is the potential upside worth the psychological weight?",
+    low: "Your future self is quietly grateful that you did not panic, did not chase excitement, and let compounding do its work. The real gift you are giving yourself is freedom from financial anxiety."
+  },
+  explorer:{
+    high:"Ten years from now, you will remember this investment — not for the return, but for what it taught you about yourself. The best possible outcome is not profit — it is walking away with deeper understanding of your own risk tolerance.",
+    low: "You are planting a seed right now. The habit of investing — consistently, intentionally, even in small amounts — fundamentally rewires how you think about money over time."
+  }
+};
+const AI_ANALYSIS = {
+  daredevil:{
+    high:"Classic high-sensation seeking profile. You display strong optimism bias — systematically underestimating downside probability while overweighting best-case scenarios. Research found investors with this profile trade 45% more frequently than average, reducing net returns by 2–3% annually through mistimed exits.",
+    low: "You are constraining yourself here — and that restraint creates a subtle cognitive cost. Low-stimulation investments in high-sensation personalities trigger 'boredom risk': the compulsion to tinker, reallocate, or exit early simply because nothing dramatic is happening."
+  },
+  guardian:{
+    high:"Loss aversion operating at approximately 2.5x the baseline rate — textbook Kahneman and Tversky. You will experience a 20% loss roughly twice as intensely as a 20% gain. In a high-volatility asset, that asymmetric pain response will almost certainly trigger premature selling at precisely the wrong moment.",
+    low: "You are in a comfortable operating zone but likely over-anchored to perceived safety. Prospect theory research suggests investors with your profile systematically underweight long-term compound returns, making extreme caution feel rational even when mathematics clearly argue otherwise."
+  },
+  explorer:{
+    high:"Ambiguity aversion combined with information overload — a common and destructive cocktail for developing investors in volatile markets. You will override your strategy based on narrative rather than data. The most effective antidote is a pre-written investment thesis reviewed before every action.",
+    low: "You are in a productive cognitive development phase. The primary trap to avoid is outcome bias — judging the quality of this decision based on its financial result rather than the soundness of your reasoning process. Good decisions can lose money. Only process is within your control."
+  }
+};
+
+const BEHAVIOR_DATA = {
+  daredevil:{
+    fear:28, greed:82, panic:35, overconf:88,
+    fearDesc:'Low fear — you underestimate downside which creates blind spots in extreme drops.',
+    greedDesc:'Very high greed — you are likely to hold past optimal exit points, chasing more.',
+    panicDesc:'Moderate panic risk — when losses hit 20%+ you may make impulsive exit decisions.',
+    overconfDesc:'Dangerously high — you overestimate your ability to time markets and predict outcomes.',
+    pattern:'You show classic "overconfident trader" behavior. You likely believe you can predict market movements better than average. Studies show this profile churns their portfolio 3x more than passive investors, losing 2.4% annually to mistimed trades alone.',
+    cost:'An investor with your behavior profile loses approximately ₹8,000–₹15,000 annually per ₹1L invested compared to a disciplined passive investor — not from bad picks, but from behavioral mistakes alone.'
+  },
+  guardian:{
+    fear:78, greed:18, panic:72, overconf:12,
+    fearDesc:'Very high fear — loss aversion causes you to exit positions too early, locking in losses.',
+    greedDesc:'Low greed — you tend to sell winners too soon, missing extended upside.',
+    panicDesc:'High panic sell risk — a 10–15% drawdown will likely trigger a full exit instinct.',
+    overconfDesc:'Very low overconfidence — healthy humility, but watch for paralysis-by-analysis.',
+    pattern:'You show "classic loss-averse guardian" behavior. Your emotional pain from losses is 2.5x stronger than your pleasure from equivalent gains. This causes systematic under-investment and early exits — the biggest hidden tax on your long-term wealth.',
+    cost:'Investors with your behavior profile leave approximately ₹12,000–₹20,000 per ₹1L on the table annually through opportunity cost — by exiting too early, staying in cash too long, and avoiding productive risk entirely.'
+  },
+  explorer:{
+    fear:52, greed:48, panic:58, overconf:44,
+    fearDesc:'Moderate fear — you feel genuine uncertainty in volatile markets and question your decisions.',
+    greedDesc:'Balanced greed — you are not overly greedy, but FOMO can push you to enter at market tops.',
+    panicDesc:'Above-average panic risk — second-guessing during dips creates regret-driven selling.',
+    overconfDesc:'Moderate overconfidence — you have moments of false certainty followed by self-doubt.',
+    pattern:'You show "information-overload explorer" behavior. You consume a lot of market content but struggle to filter signal from noise. This creates strategy-switching — abandoning a plan when short-term data contradicts it, which destroys long-term compounding.',
+    cost:'Investors with your behavior profile lose approximately ₹5,000–₹10,000 per ₹1L annually from strategy-switching and re-entry timing errors. The cost is lower than extremes but highly fixable with discipline.'
+  }
+};
+
+const NEWS_SCENARIOS = {
+  crash2020:{
+    title:'COVID-19 Crash Impact on Your Portfolio',
+    rows:[
+      { label:'Portfolio drop (peak to trough)', val:null, calc: function(r){ return (r>=80?'-38%':r>=50?'-24%':r>=30?'-14%':'-6%'); }, color: function(r){ return 'neg'; } },
+      { label:'Recovery time (to break-even)',   val:null, calc: function(r){ return (r>=80?'18 months':r>=50?'11 months':r>=30?'7 months':'4 months'); }, color: ()=>'neu' },
+      { label:'Panic sell probability for you',  val:null, calc: function(r,p){ return (p==='guardian'?'Very High (74%)':p==='daredevil'?'Low (22%)':'Moderate (51%)'); }, color: (r,p)=>(p==='guardian'?'neg':p==='daredevil'?'pos':'neu') },
+      { label:'Estimated recovery return if held',val:null,calc: function(r){ return (r>=80?'+280%':r>=50?'+110%':r>=30?'+38%':'+16%'); }, color: ()=>'pos' }
+    ],
+    persona:{
+      daredevil:'You would have held or even bought more during the crash — which is the right move. However, your overconfidence might have led you to add leverage at the bottom, creating unnecessary risk even in a recovering market.',
+      guardian:'You would almost certainly have panic-sold near the bottom. Data shows investors with your risk profile exited in 73% of cases during the 2020 crash, missing the fastest market recovery in history (+68% in 12 months).',
+      explorer:'You would have been paralyzed by conflicting news and likely exited at -15%, then hesitated to re-enter until the market was already up 40%. This "watching from the sidelines during recovery" is the most common Explorer mistake.'
+    }
+  },
+  cryptoboom:{
+    title:'Bitcoin Bull Run Impact on Your Portfolio',
+    rows:[
+      { label:'Return if invested in crypto',    val:'+847%', color:()=>'pos' },
+      { label:'FOMO entry probability (near top)',val:null, calc:(r,p)=>(p==='daredevil'?'Low (18%)':p==='guardian'?'High (65%)':'Very High (78%)'), color:(r,p)=>(p==='daredevil'?'pos':'neg') },
+      { label:'Portfolio in crypto at peak?',    val:null, calc:(r,p)=>(p==='daredevil'?'Yes — likely over-allocated':p==='guardian'?'No — probably avoided entirely':'Partial — entered mid-rally'), color:()=>'neu' },
+      { label:'Loss from FOMO entry (post-peak)',val:'-72% from peak', color:()=>'neg' }
+    ],
+    persona:{
+      daredevil:'You would have been in crypto early — which is good. The risk is you would have doubled down at the peak and ridden it from ₹50L all the way back to ₹14L. Conviction without an exit strategy is just gambling.',
+      guardian:'You would have watched this from the sidelines, which actually protected you from the crash. But the regret of "missing the bull run" would have driven you into a worse asset at a worse time. Regret-driven investing is more dangerous than FOMO.',
+      explorer:'Highest FOMO risk of all three personas. You would have entered when friends started talking about it — which is always near the top. The social proof signal overrides rational analysis. This is the #1 mistake new investors make in any asset.'
+    }
+  },
+  ratehike:{
+    title:'RBI Rate Hike Impact on Your Portfolio',
+    rows:[
+      { label:'Bond portfolio drop',   val:'-11% in 6 months', color:()=>'neg' },
+      { label:'Real estate slowdown',  val:'-8% in capital value', color:()=>'neg' },
+      { label:'Stocks (rate sensitive)',val:'-16% average', color:()=>'neg' },
+      { label:'Gold performance',      val:'+6% (safe haven demand)', color:()=>'pos' }
+    ],
+    persona:{
+      daredevil:'Rate hikes hit growth stocks hardest — your likely holdings. Your natural inclination to hold would cost you 20–30% in some positions before the bottom. Rate cycle investing requires patience you may not have.',
+      guardian:'This is the Guardian nightmare: even "safe" assets like bonds get hurt by rate hikes. Your belief that low-risk means low-loss is false in this scenario. Diversification across asset types (including gold) is the only real protection.',
+      explorer:'This is a perfect learning event. Rate hikes are predictable — RBI signals them in advance. Learning to read macro signals is the single highest-leverage skill you can develop as an Explorer investor.'
+    }
+  },
+  ipohype:{
+    title:'Hyped IPO Crash Impact on Your Portfolio',
+    rows:[
+      { label:'Day 1 listing vs issue price', val:'-27% (like Paytm)', color:()=>'neg' },
+      { label:'6-month return from listing',  val:'-52% total', color:()=>'neg' },
+      { label:'Chance you applied based on GMP',val:null, calc:(r,p)=>(p==='daredevil'?'High (71%)':p==='guardian'?'Low (20%)':'Moderate (48%)'), color:(r,p)=>(p==='daredevil'?'neg':'pos') },
+      { label:'Recovery to issue price',       val:'Never (as of 2024)', color:()=>'neg' }
+    ],
+    persona:{
+      daredevil:'You would have applied — and possibly doubled your application to maximize allotment. The GMP would have felt like a guaranteed win. This is exactly the hype trap: high GMP creates false confidence, attracts too many applicants, and collapses on listing.',
+      guardian:'You likely avoided this IPO, which was the right call. But the pattern to watch: Guardians often miss genuinely good IPOs (like MedCore above) because the memory of bad ones creates permanent IPO aversion. Not all IPOs are hype plays.',
+      explorer:'You would have done research, found the GMP compelling, and applied. The lesson here is that GMP is a grey market speculation number — not a fundamental signal. Always check the P/E ratio, revenue growth, and profit status before any IPO decision.'
+    }
+  }
+};
+ 
+let selectedNews = null;
+ 
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('content-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+ 
+function goToScreen(name) {
+  document.querySelectorAll('.rv-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  updateStepBar(name);
+  if (name === 'loading') runLoading();
+}
+function updateStepBar(name) {
+  const steps  = ['persona','asset','loading','result'];
+  const labels = ['Personality','Asset & Amount','Simulating','Your Results'];
+  const idx = steps.indexOf(name);
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('s' + i);
+    el.className = (i-1 < idx) ? 'step-dot done' : (i-1 === idx) ? 'step-dot active' : 'step-dot';
+  }
+  document.getElementById('stepLabel').textContent = labels[idx] || '';
+}
+ 
+document.getElementById('personaGrid').addEventListener('click', e => {
+  const card = e.target.closest('.persona-card');
+  if (!card) return;
+  document.querySelectorAll('.persona-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.persona = card.dataset.id;
+  document.getElementById('btn-p1').disabled = false;
+});
+document.getElementById('assetGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.asset-btn');
+  if (!btn) return;
+  document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.asset = btn.dataset.id;
+  state.assetRisk = parseInt(btn.dataset.risk);
+  document.getElementById('btn-a2').disabled = false;
+});
+ 
+function updateAmt(v) {
+  state.amount = parseInt(v);
+  document.getElementById('amtDisplay').textContent = '₹' + parseInt(v).toLocaleString('en-IN');
+}
+function updateHoriz(v) {
+  state.horizon = parseInt(v);
+  document.getElementById('horizDisplay').textContent = v + (v == 1 ? ' year' : ' years');
+}
+ 
+function runLoading() {
+  const msgs = [
+    'Analyzing your investor psychology...',
+    'Mapping emotional response patterns...',
+    'Running 10,000 Monte Carlo simulations...',
+    'Projecting your future wealth scenarios...',
+    'Generating behavioral insights...'
+  ];
+  let i = 0;
+  const el = document.getElementById('loadingText');
+  el.textContent = msgs[0];
+  const iv = setInterval(() => {
+    i++;
+    if (i < msgs.length) el.textContent = msgs[i];
+    else { clearInterval(iv); setTimeout(buildResult, 500); }
+  }, 620);
+}
+ 
+function buildResult() {
+  const p = PERSONAS[state.persona];
+  const a = ASSETS[state.asset];
+  const isHighRisk = state.assetRisk >= 50;
+  const key = isHighRisk ? 'high' : 'low';
+ 
+  const riskScore = Math.min(98, Math.round(state.assetRisk * p.riskMod));
+  const lossPct   = Math.min(93, Math.max(5, Math.round(state.assetRisk * 0.58 + p.lossAdd)));
+  const rawReturn = a.baseReturn * p.returnMod;
+  const horizMult = isHighRisk ? state.horizon / 3 : Math.sqrt(state.horizon / 3);
+  const expReturn = Math.round(rawReturn * horizMult);
+  const bScore    = Math.max(10, Math.min(99, Math.round(100 - lossPct * 0.45 + expReturn * 0.08)));
+ 
+  document.getElementById('resultTitle').textContent = p.label + '  ×  ' + a.label;
+  document.getElementById('resultSub').textContent = '₹' + state.amount.toLocaleString('en-IN') + '  ·  ' + state.horizon + ' year' + (state.horizon > 1 ? 's' : '') + ' horizon';
+ 
+  const badge = document.getElementById('riskBadge');
+  if (riskScore >= 65) { badge.className = 'result-badge badge-high'; badge.textContent = '⚠ High Risk Detected'; }
+  else if (riskScore >= 35) { badge.className = 'result-badge badge-mid'; badge.textContent = '◆ Moderate Risk'; }
+  else { badge.className = 'result-badge badge-low'; badge.textContent = '✓ Conservative Play'; }
+ 
+  const lossEl = document.getElementById('r-loss');
+  lossEl.textContent = lossPct + '%';
+  lossEl.className = 'metric-value ' + (lossPct > 60 ? 'danger' : lossPct > 35 ? 'warning' : 'success');
+  document.getElementById('r-loss-sub').textContent = lossPct > 60 ? 'High chance of capital loss' : lossPct > 35 ? 'Moderate downside risk' : 'Low loss probability';
+ 
+  const retEl = document.getElementById('r-return');
+  retEl.textContent = (expReturn > 0 ? '+' : '') + expReturn + '%';
+  retEl.className = 'metric-value ' + (expReturn > 15 ? 'success' : 'warning');
+  document.getElementById('r-return-sub').textContent = expReturn > 80 ? 'Aggressive upside possible' : expReturn > 25 ? 'Solid expected growth' : 'Conservative growth';
+ 
+  const bsEl = document.getElementById('r-bscore');
+  bsEl.textContent = bScore;
+  bsEl.className = 'metric-value ' + (bScore >= 65 ? 'success' : bScore >= 40 ? 'warning' : 'danger');
+ 
+  setTimeout(() => { document.getElementById('riskNeedle').style.left = Math.min(96, riskScore) + '%'; }, 300);
+ 
+  const emotions = EMOTIONS[state.persona][key];
+  document.getElementById('emotionTags').innerHTML = emotions
+    .map(e => `<span class="etag ${TAG_CLASS[e] || 'etag-risk'}">${e}</span>`).join('');
+ 
+  document.getElementById('ib-text-e').textContent = EMOTION_INSIGHTS[state.persona][key];
+  document.getElementById('ib-text-l').textContent = LIFE_IMPACTS[state.persona][key];
+ 
+  const amt = state.amount;
+  const pts = [
+    Math.max(1, Math.round(state.horizon * 0.33)),
+    Math.max(2, Math.round(state.horizon * 0.66)),
+    state.horizon
+  ];
+  const gr = (expReturn / 100) / state.horizon;
+  document.getElementById('timeline').innerHTML = pts.map((yr, i) => {
+    const factor = 1 + gr * yr * (0.7 + i * 0.15);
+    const val = Math.round(amt * factor);
+    const delta = Math.round(((val - amt) / amt) * 100);
+    const cls = val > amt * 1.05 ? 'pos' : val > amt * 0.95 ? 'mid' : 'neg';
+    const label = val >= 100000 ? '₹' + (val/100000).toFixed(1) + 'L' : '₹' + Math.round(val/1000) + 'K';
+    const dStr = delta > 0 ? '+' + delta + '%' : delta + '%';
+    return `<div class="tl-item"><div class="tl-dot ${cls}">${yr}y</div><div class="tl-year">Year ${yr}</div><div class="tl-val">${label}</div><div class="tl-delta ${delta>=0?'up':'down'}">${dStr}</div></div>`;
+  }).join('');
+ 
+  document.getElementById('futureMsg').textContent = FUTURE_MSGS[state.persona][key];
+  document.getElementById('futurePersona').textContent = '— ' + p.label + ' investing in ' + a.label + ' · ' + state.horizon + 'y horizon';
+  document.getElementById('aiText').textContent = AI_ANALYSIS[state.persona][key];
+  document.getElementById('bScoreDisplay').textContent = bScore + '/100';
+  setTimeout(() => { document.getElementById('scoreBar').style.width = bScore + '%'; }, 400);
+ 
+  // BUILD BEHAVIOR ENGINE DATA
+  buildBehaviorEngine();
+ 
+  // UNLOCK NEWS TAB DATA
+  document.getElementById('newsNoData').style.display = 'none';
+  document.getElementById('newsData').style.display = 'block';
+ 
+  // GAMIFICATION
+  gameState.simCount++;
+  addXP(50, '🎯 First Simulation complete!', 'You earned 50 XP for running your first sim');
+  unlockBadge('badge1', 'badge1', '🎯 First Sim');
+  markChallengeDone('ch1');
+ 
+  goToScreen('result');
+}
+ 
+function buildBehaviorEngine() {
+  const bd = BEHAVIOR_DATA[state.persona];
+  document.getElementById('behNoData').style.display = 'none';
+  document.getElementById('behData').style.display = 'block';
+ 
+  const fearIndex = Math.round((bd.fear * 0.4) + (bd.panic * 0.4) + ((100 - bd.greed) * 0.2));
+  document.getElementById('fearIndexVal').textContent = fearIndex + '%';
+  document.getElementById('fearIndexLabel').textContent = fearIndex > 65 ? 'Fear-Dominant Investor' : fearIndex > 40 ? 'Balanced Fear/Greed' : 'Greed-Dominant Investor';
+  document.getElementById('fearIndexDesc').textContent =
+    fearIndex > 65 ? 'Your decisions are primarily driven by avoiding loss rather than seeking gain. This causes systematic under-performance over long time horizons.' :
+    fearIndex > 40 ? 'You have a relatively balanced emotional profile. Your biggest risk is inconsistency — your behavior shifts significantly based on recent market news.' :
+    'Your decisions are primarily driven by potential gains. This creates overtrading and holding losers too long while cutting winners too early.';
+ 
+  document.getElementById('beh-fear').textContent = bd.fear + '%';
+  document.getElementById('beh-greed').textContent = bd.greed + '%';
+  document.getElementById('beh-panic').textContent = bd.panic + '%';
+  document.getElementById('beh-overconf').textContent = bd.overconf + '%';
+  document.getElementById('desc-fear').textContent = bd.fearDesc;
+  document.getElementById('desc-greed').textContent = bd.greedDesc;
+  document.getElementById('desc-panic').textContent = bd.panicDesc;
+  document.getElementById('desc-overconf').textContent = bd.overconfDesc;
+ 
+  setTimeout(() => {
+    document.getElementById('bar-fear').style.width = bd.fear + '%';
+    document.getElementById('bar-greed').style.width = bd.greed + '%';
+    document.getElementById('bar-panic').style.width = bd.panic + '%';
+    document.getElementById('bar-overconf').style.width = bd.overconf + '%';
+  }, 300);
+ 
+  document.getElementById('behPatternText').textContent = bd.pattern;
+  document.getElementById('behCostText').textContent = bd.cost;
+}
+ 
+function selectNews(el) {
+  document.querySelectorAll('.news-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const id = el.dataset.id;
+  selectedNews = id;
+  buildNewsImpact(id);
+ 
+  if (!gameState.newsChecked) {
+    gameState.newsChecked = true;
+    addXP(40, '📰 News Analyst badge unlocked!', 'You earned 40 XP for stress-testing your portfolio');
+    unlockBadge('badge2', 'badge2', '📰 News Pro');
+    markChallengeDone('ch2');
+  }
+}
+ 
+function buildNewsImpact(id) {
+  const sc = NEWS_SCENARIOS[id];
+  const resEl = document.getElementById('newsImpactResult');
+  resEl.classList.add('visible');
+  document.getElementById('nirTitle').textContent = sc.title;
+ 
+  const r = state.assetRisk || 50;
+  const p = state.persona || 'explorer';
+ 
+  document.getElementById('nirRows').innerHTML = sc.rows.map(row => {
+    const val = row.val || (row.calc ? row.calc(r, p) : '—');
+    const colorFn = row.color;
+    const cls = colorFn ? colorFn(r, p) : 'neu';
+    return `<div class="nir-row"><div class="nir-label">${row.label}</div><div class="nir-val ${cls}">${val}</div></div>`;
+  }).join('');
+ 
+  const pInsight = document.getElementById('newsPersonaInsight');
+  const pText = document.getElementById('newsPersonaText');
+  if (p && sc.persona && sc.persona[p]) {
+    pInsight.style.display = 'block';
+    pText.textContent = sc.persona[p];
+  } else {
+    pInsight.style.display = 'none';
+  }
+}
+ 
+function toggleIPOSim(btn, id) {
+  const el = document.getElementById('sim-' + id);
+  if (el.classList.contains('visible')) {
+    el.classList.remove('visible');
+    btn.textContent = 'Simulate outcome ▾';
+  } else {
+    el.classList.add('visible');
+    btn.textContent = 'Hide simulation ▴';
+    if (!gameState.ipoChecked) {
+      gameState.ipoChecked = true;
+      addXP(60, '🚀 IPO Scout badge unlocked!', 'You earned 60 XP for simulating an IPO');
+      unlockBadge('badge3', 'badge3', '🚀 IPO Scout');
+      markChallengeDone('ch3');
+    }
+  }
+}
+ 
+function addXP(amount, msg, sub) {
+  gameState.xp += amount;
+  const levels = [
+    { min:0,   max:199,  level:1, label:'Beginner Investor',  icon:'🌱' },
+    { min:200, max:499,  level:2, label:'Learner',            icon:'📚' },
+    { min:500, max:899,  level:3, label:'Analyst',            icon:'🔬' },
+    { min:900, max:1499, level:4, label:'Strategist',         icon:'♟️' },
+    { min:1500,max:99999,level:5, label:'Pro Investor',       icon:'💎' }
+  ];
+  const lv = levels.find(l => gameState.xp >= l.min && gameState.xp <= l.max) || levels[4];
+  gameState.level = lv.level;
+  const range = lv.max - lv.min;
+  const progress = Math.min(100, Math.round(((gameState.xp - lv.min) / range) * 100));
+  document.getElementById('xpLevel').textContent = 'Level ' + lv.level + ' — ' + lv.label;
+  document.getElementById('xpPts').textContent = gameState.xp + ' / ' + lv.max + ' XP';
+  document.getElementById('xpFill').style.width = progress + '%';
+  document.getElementById('xpAvatar').textContent = lv.icon;
+ 
+  // Update level map
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('lv' + i);
+    if (i < lv.level) { el.className = 'lv-circle done'; el.textContent = '✓'; }
+    else if (i === lv.level) { el.className = 'lv-circle current'; el.textContent = i; }
+    else { el.className = 'lv-circle locked'; el.textContent = i; }
+  }
+ 
+  const xpBox = document.getElementById('xpUnlockBox');
+  if (xpBox) {
+    xpBox.style.display = 'block';
+    document.getElementById('xpUnlockMsg').textContent = '+' + amount + ' XP earned!  ' + msg;
+    document.getElementById('xpUnlockSub').textContent = sub;
+    setTimeout(() => { xpBox.style.display = 'none'; }, 4000);
+  }
+}
+ 
+function unlockBadge(navId, barId, label) {
+  const el = document.getElementById(navId);
+  if (el) { el.className = 'badge-chip new'; el.textContent = label; }
+}
+ 
+function markChallengeDone(id) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  const xpEl = row.querySelector('[id$="-xp"]');
+  if (xpEl) { xpEl.className = 'ch-done'; xpEl.textContent = '✓ Done'; }
+  row.style.opacity = '0.6';
+ 
+  // Also mark in badge collection tab
+  const colBadges = document.getElementById('badgeCollection');
+  if (colBadges) {
+    const chips = colBadges.querySelectorAll('.badge-chip');
+    const idx = {ch1:0, ch2:1, ch3:2, ch4:7}[id];
+    if (idx !== undefined && chips[idx]) {
+      chips[idx].className = 'badge-chip earned';
+      chips[idx].style.fontSize = '12px';
+      chips[idx].style.padding = '6px 14px';
+    }
+  }
+}
+ 
+function goToBehavior() {
+  switchTab('behavior');
+  addXP(30, '🧠 Behavior check complete!', 'You earned 30 XP for reviewing your fear profile');
+  markChallengeDone('ch4');
+}
+ 
+function resetAll() {
+  state = { persona:null, asset:null, assetRisk:0, amount:50000, horizon:3 };
+  document.querySelectorAll('.persona-card, .asset-btn').forEach(el => el.classList.remove('selected'));
+  document.getElementById('btn-p1').disabled = true;
+  document.getElementById('btn-a2').disabled = true;
+  document.getElementById('amtDisplay').textContent = '₹50,000';
+  document.getElementById('horizDisplay').textContent = '3 years';
+  document.getElementById('amtSlider').value = 50000;
+  document.getElementById('horizSlider').value = 3;
+  document.getElementById('riskNeedle').style.left = '5%';
+  document.getElementById('scoreBar').style.width = '0%';
+  goToScreen('persona');
+  switchTab('simulator');
+}
+</script>
+</body>
+</html>
